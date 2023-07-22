@@ -23,6 +23,8 @@ class Experiment:
         self.path_model_config = consts.PATH_MODEL_CONFIG
         self.config = utils.Json.load(self.path_model_config)
         self.config.update(self.data_config.todict())
+        self.checkpoint = consts.ARGS.checkpoint
+        self.run_type = consts.ARGS.run_type
 
         # establish experiment folder
         self.exp_name = f'{consts.DIR_DATA.stem}-{consts.LM_NAME_SUFFIX}-{self.path_model_config.stem}'
@@ -90,7 +92,7 @@ class Experiment:
         utils.Log.info(f'Best epoch: {best_epoch}. F1: {best_valid_f1}')
         return best_epoch
 
-    def predict(self, epoch, for_tagging=False):
+    def predict(self, epoch, checkpoint=None, for_tagging=False):
         test_preprocessor = None
         if for_tagging:
             test_preprocessor = Preprocessor(
@@ -106,10 +108,13 @@ class Experiment:
         test_preprocessor.tokenize_corpus()
 
         ''' Model Predict '''
+        #epoch = 8
         dir_prefix = 'tagging.' if for_tagging else 'kpcand.'
         dir_predict = self.trainer.output_dir / f'{dir_prefix}predict.epoch-{epoch}'
-        path_ckpt = self.trainer.output_dir / f'epoch-{epoch}.ckpt'
-        model: model_base.BaseModel = model_base.BaseModel.load_ckpt(path_ckpt).eval().to(consts.DEVICE)
+        #path_ckpt = self.trainer.output_dir / f'epoch-{epoch}.ckpt'
+        
+               
+        model: model_base.BaseModel = model_base.BaseModel.load_ckpt(checkpoint).eval().to(consts.DEVICE)
         path_predicted_docs = model.predict(
             path_tokenized_id_corpus=test_preprocessor.path_tokenized_id_corpus, 
             dir_output=dir_predict,
@@ -128,6 +133,7 @@ class Experiment:
                 use_cache=True,
                 use_tqdm=True
             )
+                        
             evaluator = evaluate.SentEvaluator()
             paths_gold = self.data_config.paths_tagging_human
             print(f'Evaluate {path_decoded_doc2sents}')
@@ -147,7 +153,18 @@ class Experiment:
 
 if __name__ == '__main__':
     exp = Experiment()
-    exp.train()
-    best_epoch = exp.select_best_epoch()
-    exp.predict(epoch=best_epoch, for_tagging=True)
-    exp.predict(epoch=best_epoch, for_tagging=False)
+    
+    if exp.run_type == "train":
+        print(f'Training Started')
+        exp.train()
+        best_epoch = exp.select_best_epoch()
+        checkpoint = exp.trainer.output_dir / f'epoch-{best_epoch}.ckpt'
+        exp.predict(epoch = best_epoch, checkpoint = checkpoint, for_tagging = False)        
+    elif exp.run_type == "inference":
+        print(f'Inference Started')
+        epoch = exp.checkpoint.split('/')[-1][6]
+        exp.predict(epoch = epoch, checkpoint = exp.checkpoint, for_tagging = True)
+        exp.predict(epoch = epoch, checkpoint = exp.checkpoint, for_tagging = False) 
+    else:
+        pass
+

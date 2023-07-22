@@ -13,6 +13,10 @@ def parse_args():
     parser.add_argument("--exp_prefix", type=str, default='', help='additional exp name')
     parser.add_argument("--model_prefix", type=str, default='', help='additional model name')
     parser.add_argument("--path_model_config", type=str, default='../configs/core.CNN.3layers.json')
+    
+    parser.add_argument("--run_type", type=str, default='train')
+    parser.add_argument("--checkpoint", type=str)
+    
     args = parser.parse_args()
     return args
 
@@ -51,12 +55,15 @@ STEM_DOC2REFS = {doc: {g for g in golds if len(g.split()) > 1} for doc, golds in
 DOCIDS_WITH_GOLD = {doc for doc, golds in STEM_DOC2REFS.items() if golds}  # Task 2 evaluation is performed on docs with gold keyphrases
 
 # huggingface LM
-GPT_TOKEN = 'Ġ'
+#GPT_TOKEN = 'Ġ'
+GPT_TOKEN = '▁'
 LM_NAME = DATA_CONFIG.lm_name
 LM_NAME_SUFFIX = LM_NAME.split('/')[-1]
 DEVICE = utils.get_device(ARGS.gpu)
 LM_MODEL = transformers.RobertaModel.from_pretrained(LM_NAME).eval().to(DEVICE)
 LM_TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(LM_NAME)
+LM_MODEL = transformers.XLMRobertaModel.from_pretrained(LM_NAME).eval().to(DEVICE)
+LM_TOKENIZER = transformers.XLMRobertaTokenizerFast.from_pretrained(LM_NAME)
 print(f'[consts] Loading pretrained model: {LM_NAME} OK!')
 
 # html visualization

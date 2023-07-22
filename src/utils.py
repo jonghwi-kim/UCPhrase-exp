@@ -103,7 +103,7 @@ class IO:
 class OrJson(IO):
     @staticmethod
     def load(path):
-        with open(path) as rf:
+        with open(path, encoding='utf-8') as rf:
             data = orjson.loads(rf.read())
         return data
 
@@ -113,7 +113,7 @@ class OrJson(IO):
 
     @staticmethod
     def dump(data, path):
-        with open(path, 'w') as wf:
+        with open(path, encoding='utf-8', mode='w') as wf:
             wf.write(orjson.dumps(data, option=orjson.OPT_INDENT_2 | orjson.OPT_NON_STR_KEYS).decode())
 
     @staticmethod
@@ -127,7 +127,7 @@ Json = OrJson
 class JsonLine(IO):
     @staticmethod
     def load(path, use_tqdm=False):
-        with open(path) as rf:
+        with open(path, encoding='utf-8') as rf:
             lines = rf.read().splitlines()
         if use_tqdm:
             lines = tqdm(lines, ncols=100, desc='Load JsonLine')
@@ -137,7 +137,7 @@ class JsonLine(IO):
     def dump(instances, path):
         assert type(instances) == list
         lines = [json.dumps(d, ensure_ascii=False) for d in instances]
-        with open(path, 'w') as wf:
+        with open(path, encoding='utf-8', mode='w') as wf:
             wf.write('\n'.join(lines))
 
 
@@ -178,7 +178,7 @@ class TextFile(IO):
 
     @staticmethod
     def dumplist(target_list, path):
-        with open(path, 'w') as wf:
+        with open(path, encoding='utf-8', mode='w') as wf:
             wf.write('\n'.join([str(o) for o in target_list]) + '\n')
 
 
